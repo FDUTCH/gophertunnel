@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/uuid"
+	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -101,6 +102,8 @@ type Dialer struct {
 	PacketHandler PacketHandler
 
 	PacketDataHandler PacketDataHandler
+
+	UpstreamDialer raknet.UpstreamDialer
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
@@ -182,6 +185,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if !ok {
 		return nil, fmt.Errorf("dial: no network under id %v", network)
 	}
+
+	n.CustomDialer(d.UpstreamDialer)
 
 	var pong []byte
 	var netConn net.Conn

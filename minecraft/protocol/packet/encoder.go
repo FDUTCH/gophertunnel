@@ -5,8 +5,9 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"io"
+
+	"github.com/sandertv/gophertunnel/minecraft/internal"
 )
 
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
@@ -50,6 +51,10 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 
 	l := make([]byte, 5)
 	for _, packet := range packets {
+
+		if packet == nil {
+			continue
+		}
 		// Each packet is prefixed with a varuint32 specifying the length of the packet.
 		if err := writeVaruint32(buf, uint32(len(packet)), l); err != nil {
 			return fmt.Errorf("encode batch: write packet length: %w", err)

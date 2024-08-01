@@ -55,6 +55,7 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 		if packet == nil {
 			continue
 		}
+
 		// Each packet is prefixed with a varuint32 specifying the length of the packet.
 		if err := writeVaruint32(buf, uint32(len(packet)), l); err != nil {
 			return fmt.Errorf("encode batch: write packet length: %w", err)

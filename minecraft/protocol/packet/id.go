@@ -210,4 +210,10 @@ const (
 	IDSetPlayerInventoryOptions
 	IDSetHud
 	IDAwardAchievement
+	IDClientBoundCloseForm
+	_
+	IDServerBoundLoadingScreen
+	IDJigsawStructureData
+	IDCurrentStructureFeature
+	IDServerBoundDiagnostics
 )

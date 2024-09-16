@@ -123,7 +123,7 @@ func (w *Writer) SubChunkPos(x *SubChunkPos) {
 // SoundPos writes an mgl32.Vec3 that serves as a position for a sound.
 func (w *Writer) SoundPos(x *mgl32.Vec3) {
 	b := BlockPos{int32((*x)[0] * 8), int32((*x)[1] * 8), int32((*x)[2] * 8)}
-	w.BlockPos(&b)
+	w.UBlockPos(&b)
 }
 
 // RGB writes a color.RGBA x as 3 float32s to the underlying buffer.
@@ -165,6 +165,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	}
 	Slice(w, &x.Actions)
 	w.Varuint32(&x.ActionType)
+	w.Varuint32(&x.TriggerType)
 	w.BlockPos(&x.BlockPosition)
 	w.Varint32(&x.BlockFace)
 	w.Varint32(&x.HotBarSlot)
@@ -172,6 +173,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Vec3(&x.Position)
 	w.Vec3(&x.ClickedPosition)
 	w.Varuint32(&x.BlockRuntimeID)
+	w.Varuint32(&x.ClientPrediction)
 }
 
 // GameRule writes a GameRule x to the Writer.

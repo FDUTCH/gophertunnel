@@ -216,6 +216,11 @@ func (conn *Conn) GameData() GameData {
 	return conn.gameData
 }
 
+// Proto returns the protocol of the connection.
+func (conn *Conn) Proto() Protocol {
+	return conn.proto
+}
+
 // StartGame starts the game for a client that connected to the server. StartGame should be called for a Conn
 // obtained using a minecraft.Listener. The game data passed will be used to spawn the player in the world of
 // the server. To spawn a Conn obtained from a call to minecraft.Dial(), use Conn.DoSpawn().
@@ -405,9 +410,25 @@ func (conn *Conn) Write(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
+// ReadBytes reads a packet from the connection without decoding it directly.
+// For direct reading, consider using ReadPacket() which decodes the packet.
+func (conn *Conn) ReadBytes() ([]byte, error) {
+	if data, ok := conn.takeDeferredPacket(); ok {
+		return data.full, nil
+	}
+	select {
+	case <-conn.close:
+		return nil, conn.closeErr("read")
+	case <-conn.readDeadline:
+		return nil, conn.wrap(context.DeadlineExceeded, "read")
+	case data := <-conn.packets:
+		return data.full, nil
+	}
+}
+
 // Read reads a packet from the connection into the byte slice passed, provided the byte slice is big enough
 // to carry the full packet.
-// It is recommended to use ReadPacket() rather than Read() in cases where reading is done directly.
+// It is recommended to use ReadPacket() and ReadBytes() rather than Read() in cases where reading is done directly.
 func (conn *Conn) Read(b []byte) (n int, err error) {
 	if data, ok := conn.takeDeferredPacket(); ok {
 		if len(b) < len(data.full) {

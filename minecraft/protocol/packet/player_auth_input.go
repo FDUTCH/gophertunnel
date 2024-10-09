@@ -55,6 +55,10 @@ const (
 	InputFlagPaddlingLeft
 	InputFlagPaddlingRight
 	InputFlagBlockBreakingDelayEnabled
+	InputFlagHorizontalCollision
+	InputFlagVerticalCollision
+	InputFlagDownLeft
+	InputFlagDownRight
 )
 
 const (
@@ -162,13 +166,13 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 		protocol.Single(io, &pk.ItemStackRequest)
 	}
 
+	if pk.InputData&InputFlagPerformBlockActions != 0 {
+		protocol.SliceVarint32Length(io, &pk.BlockActions)
+	}
+
 	if pk.InputData&InputFlagClientPredictedVehicle != 0 {
 		io.Vec2(&pk.VehicleRotation)
 		io.Varint64(&pk.ClientPredictedVehicle)
-	}
-
-	if pk.InputData&InputFlagPerformBlockActions != 0 {
-		protocol.SliceVarint32Length(io, &pk.BlockActions)
 	}
 
 	io.Vec2(&pk.AnalogueMoveVector)

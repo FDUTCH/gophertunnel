@@ -252,6 +252,12 @@ func init() {
 		IDSetHud:                         func() Packet { return &SetHud{} },
 		IDAwardAchievement:               func() Packet { return &AwardAchievement{} },
 		IDClientBoundCloseForm:           func() Packet { return &ClientBoundCloseForm{} },
+		IDServerBoundLoadingScreen:       func() Packet { return &ServerBoundLoadingScreen{} },
+		IDJigsawStructureData:            func() Packet { return &JigsawStructureData{} },
+		IDCurrentStructureFeature:        func() Packet { return &CurrentStructureFeature{} },
+		IDServerBoundDiagnostics:         func() Packet { return &ServerBoundDiagnostics{} },
+		IDCameraAimAssist:                func() Packet { return &CameraAimAssist{} },
+		IDContainerRegistryCleanup:       func() Packet { return &ContainerRegistryCleanup{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
@@ -286,6 +292,7 @@ func init() {
 		IDMapInfoRequest:                  func() Packet { return &MapInfoRequest{} },
 		IDRequestChunkRadius:              func() Packet { return &RequestChunkRadius{} },
 		IDBossEvent:                       func() Packet { return &BossEvent{} },
+		IDShowCredits:                     func() Packet { return &ShowCredits{} },
 		IDCommandRequest:                  func() Packet { return &CommandRequest{} },
 		IDCommandBlockUpdate:              func() Packet { return &CommandBlockUpdate{} },
 		IDResourcePackChunkRequest:        func() Packet { return &ResourcePackChunkRequest{} },
@@ -335,6 +342,8 @@ func init() {
 		IDBlockActorData:                  func() Packet { return &BlockActorData{} },
 		IDPlayerToggleCrafterSlotRequest:  func() Packet { return &PlayerToggleCrafterSlotRequest{} },
 		IDSetPlayerInventoryOptions:       func() Packet { return &SetPlayerInventoryOptions{} },
+		IDServerBoundLoadingScreen:        func() Packet { return &ServerBoundLoadingScreen{} },
+		IDServerBoundDiagnostics:          func() Packet { return &ServerBoundDiagnostics{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)

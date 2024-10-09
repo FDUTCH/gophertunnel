@@ -14,6 +14,10 @@ type InventoryContent struct {
 	// Content is the new content of the inventory. The length of this slice must be equal to the full size of
 	// the inventory window updated.
 	Content []protocol.ItemInstance
+	// Container is the protocol.FullContainerName that describes the container that the content is for.
+	Container protocol.FullContainerName
+	// DynamicContainerSize is the size of the container, if the container is dynamic.
+	DynamicContainerSize uint32
 }
 
 // ID ...
@@ -24,4 +28,6 @@ func (*InventoryContent) ID() uint32 {
 func (pk *InventoryContent) Marshal(io protocol.IO) {
 	io.Varuint32(&pk.WindowID)
 	protocol.FuncSlice(io, &pk.Content, io.ItemInstance)
+	protocol.Single(io, &pk.Container)
+	io.Varuint32(&pk.DynamicContainerSize)
 }

@@ -14,6 +14,10 @@ type InventorySlot struct {
 	// Slot is the index of the slot that the packet modifies. The new item will be set to the slot at this
 	// index.
 	Slot uint32
+	// Container is the protocol.FullContainerName that describes the container that the content is for.
+	Container protocol.FullContainerName
+	// DynamicContainerSize is the size of the container, if the container is dynamic.
+	DynamicContainerSize uint32
 	// NewItem is the item to be put in the slot at Slot. It will overwrite any item that may currently
 	// be present in that slot.
 	NewItem protocol.ItemInstance
@@ -27,5 +31,7 @@ func (*InventorySlot) ID() uint32 {
 func (pk *InventorySlot) Marshal(io protocol.IO) {
 	io.Varuint32(&pk.WindowID)
 	io.Varuint32(&pk.Slot)
+	protocol.Single(io, &pk.Container)
+	io.Varuint32(&pk.DynamicContainerSize)
 	io.ItemInstance(&pk.NewItem)
 }

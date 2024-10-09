@@ -9,6 +9,14 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/df-mc/atomic"
+	"io"
+	"log"
+	"net"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/uuid"
@@ -19,13 +27,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/text"
-	"io"
-	"log"
-	"net"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // exemptedResourcePack is a resource pack that is exempted from being downloaded. These packs may be directly
@@ -57,7 +58,10 @@ type Conn struct {
 	log         *log.Logger
 	authEnabled bool
 
-	proto         Protocol
+	proto Protocol
+	// just in case
+	protoMu sync.Mutex
+
 	acceptedProto []Protocol
 	pool          packet.Pool
 	enc           *packet.Encoder
@@ -111,7 +115,7 @@ type Conn struct {
 
 	// expectedIDs is a slice of packet identifiers that are next expected to arrive, until the connection is
 	// logged in.
-	expectedIDs atomic.Value
+	expectedIDs atomic.Value[[]uint32]
 
 	packMu sync.Mutex
 	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
@@ -137,11 +141,15 @@ type Conn struct {
 	// to this connection will call this function.
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	disconnectMessage atomic.Pointer[string]
+	disconnectMessage atomic.Value[*string]
 
 	shieldID atomic.Int32
 
 	additional chan packet.Packet
+
+	packetHandler atomic.Value[PacketHandler]
+
+	packetDataHandler atomic.Value[PacketDataHandler]
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -189,6 +197,16 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Pro
 		}
 	}()
 	return conn
+}
+
+// SetPacketHandler gives ability to handle all packets under the hood
+func (conn *Conn) SetPacketHandler(handler PacketHandler) {
+	conn.packetHandler.Store(handler)
+}
+
+// SetPacketDataHandler gives ability to handle all packets under the hood before gophertunnel decodes the packet
+func (conn *Conn) SetPacketDataHandler(handler PacketDataHandler) {
+	conn.packetDataHandler.Store(handler)
 }
 
 // IdentityData returns the identity data of the connection. It holds the UUID, XUID and username of the
@@ -499,6 +517,12 @@ func (conn *Conn) RemoteAddr() net.Addr {
 	return conn.conn.RemoteAddr()
 }
 
+func (conn *Conn) Protocol() Protocol {
+	conn.protoMu.Lock()
+	defer conn.protoMu.Unlock()
+	return conn.proto
+}
+
 // SetDeadline sets the read and write deadline of the connection. It is equivalent to calling SetReadDeadline
 // and SetWriteDeadline at the same time.
 func (conn *Conn) SetDeadline(t time.Time) error {
@@ -581,6 +605,15 @@ func (conn *Conn) receive(data []byte) error {
 	if err != nil {
 		return err
 	}
+
+	var handle = true
+
+	conn.packetDataHandler.Load().HandleData(pkData.h, pkData.full, pkData.payload, conn, &handle)
+
+	if !handle {
+		return nil
+	}
+
 	if pkData.h.PacketID == packet.IDDisconnect {
 		// We always handle disconnect packets and close the connection if one comes in.
 		pks, err := pkData.decode(conn)
@@ -611,7 +644,7 @@ func (conn *Conn) receive(data []byte) error {
 
 // handle tries to handle the incoming packetData.
 func (conn *Conn) handle(pkData *packetData) error {
-	for _, id := range conn.expectedIDs.Load().([]uint32) {
+	for _, id := range conn.expectedIDs.Load() {
 		if id == pkData.h.PacketID {
 			// If the packet was expected, so we handle it right now.
 			pks, err := pkData.decode(conn)
@@ -642,6 +675,15 @@ func (conn *Conn) handleMultiple(pks []packet.Packet) error {
 // handlePacket handles an incoming packet. It returns an error if any of the data found in the packet was not
 // valid or if handling failed for any other reason.
 func (conn *Conn) handlePacket(pk packet.Packet) error {
+
+	var handle = true
+
+	conn.packetHandler.Load().HandlePacket(pk, conn, &handle)
+
+	if !handle {
+		return nil
+	}
+
 	defer func() {
 		_ = conn.Flush()
 	}()
@@ -693,7 +735,10 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	found := false
 	for _, pro := range conn.acceptedProto {
 		if pro.ID() == pk.ClientProtocol {
+
+			conn.protoMu.Lock()
 			conn.proto = pro
+			conn.protoMu.Unlock()
 			conn.pool = pro.Packets(true)
 			found = true
 			break
@@ -1298,7 +1343,7 @@ func (conn *Conn) handleSetLocalPlayerAsInitialised(pk *packet.SetLocalPlayerAsI
 	if pk.EntityRuntimeID != conn.gameData.EntityRuntimeID {
 		return fmt.Errorf("entity runtime ID mismatch: expected %v (from StartGame), got %v", conn.gameData.EntityRuntimeID, pk.EntityRuntimeID)
 	}
-	if conn.waitingForSpawn.CompareAndSwap(true, false) {
+	if conn.waitingForSpawn.CAS(true, false) {
 		close(conn.spawn)
 	}
 	return nil

@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/uuid"
+	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -97,6 +98,12 @@ type Dialer struct {
 	// the client when an XUID is present without logging in.
 	// For getting this to work with BDS, authentication should be disabled.
 	KeepXBLIdentityData bool
+
+	PacketHandler PacketHandler
+
+	PacketDataHandler PacketDataHandler
+
+	UpstreamDialer raknet.UpstreamDialer
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
@@ -167,11 +174,19 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if d.FlushRate == 0 {
 		d.FlushRate = time.Second / 20
 	}
+	if d.PacketHandler == nil {
+		d.PacketHandler = nopPacketHandler{}
+	}
+	if d.PacketDataHandler == nil {
+		d.PacketDataHandler = nopPacketDataHandler{}
+	}
 
 	n, ok := networkByID(network)
 	if !ok {
 		return nil, fmt.Errorf("dial: no network under id %v", network)
 	}
+
+	n.CustomDialer(d.UpstreamDialer)
 
 	var pong []byte
 	var netConn net.Conn
@@ -193,6 +208,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	conn.cacheEnabled = d.EnableClientCache
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
+	conn.packetHandler.Store(d.PacketHandler)
+	conn.packetDataHandler.Store(d.PacketDataHandler)
 
 	defaultIdentityData(&conn.identityData)
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)

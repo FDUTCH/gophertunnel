@@ -5,6 +5,7 @@ go 1.22
 toolchain go1.22.1
 
 require (
+	github.com/df-mc/atomic v1.10.0
 	github.com/go-gl/mathgl v1.1.0
 	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/golang/snappy v0.0.4
@@ -19,7 +20,6 @@ require (
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/image v0.17.0 // indirect
 )

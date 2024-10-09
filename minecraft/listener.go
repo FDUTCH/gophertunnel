@@ -81,6 +81,10 @@ type ListenConfig struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+
+	PacketHandler PacketHandler
+
+	PacketDataHandler PacketDataHandler
 }
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -129,6 +133,13 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	if cfg.FlushRate == 0 {
 		cfg.FlushRate = time.Second / 20
 	}
+	if cfg.PacketHandler == nil {
+		cfg.PacketHandler = nopPacketHandler{}
+	}
+	if cfg.PacketDataHandler == nil {
+		cfg.PacketDataHandler = nopPacketDataHandler{}
+	}
+
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	listener := &Listener{
 		cfg:      cfg,
@@ -269,6 +280,9 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
 	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
+
+	conn.packetHandler.Store(listener.cfg.PacketHandler)
+	conn.packetDataHandler.Store(listener.cfg.PacketDataHandler)
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.

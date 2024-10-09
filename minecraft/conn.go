@@ -946,6 +946,10 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 	return nil
 }
 
+func (conn *Conn) Listener() *Listener {
+	return conn.listener
+}
+
 // handleResourcePackStack handles a ResourcePackStack packet sent by the server. The stack defines the order
 // that resource packs are applied in.
 func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {

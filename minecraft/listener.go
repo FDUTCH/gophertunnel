@@ -275,6 +275,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
 	//conn.resourcePacks = packs
+	conn.listener = listener
 	conn.biomes = listener.cfg.Biomes
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled

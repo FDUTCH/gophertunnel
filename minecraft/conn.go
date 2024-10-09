@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -150,6 +151,8 @@ type Conn struct {
 	packetHandler atomic.Value[PacketHandler]
 
 	packetDataHandler atomic.Value[PacketDataHandler]
+
+	listener *Listener
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -812,6 +815,11 @@ func (conn *Conn) handleClientToServerHandshake() error {
 		return fmt.Errorf("send PlayStatus (Status=LoginSuccess): %w", err)
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
+
+	conn.listener.packsMu.RLock()
+	conn.resourcePacks = slices.Clone(conn.listener.packs)
+	conn.listener.packsMu.RUnlock()
+
 	for _, pack := range conn.resourcePacks {
 		if pack.DownloadURL() != "" {
 			pk.PackURLs = append(pk.PackURLs, protocol.PackURL{

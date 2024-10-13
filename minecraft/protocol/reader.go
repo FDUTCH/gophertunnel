@@ -631,29 +631,9 @@ var errVarIntOverflow = errors.New("varint overflows integer")
 
 // Varint64 reads up to 10 bytes from the underlying buffer into an int64.
 func (r *Reader) Varint64(x *int64) {
-	var ux uint64
-	for i := 0; i < 70; i += 7 {
-		b, err := r.r.ReadByte()
-		if err != nil {
-			r.panic(err)
-		}
-
-		ux |= uint64(b&0x7f) << i
-		if b&0x80 == 0 {
-			*x = int64(ux >> 1)
-			if ux&1 != 0 {
-				*x = ^*x
-			}
-			return
-		}
-	}
-	r.panic(errVarIntOverflow)
-}
-
-// Varuint64 reads up to 10 bytes from the underlying buffer into a uint64.
-func (r *Reader) Varuint64(x *uint64) {
-	var v uint64
-	for i := 0; i < 70; i += 7 {
+	var v int64
+	var i int
+	for {
 		b, err := r.r.ReadByte()
 		if err != nil {
 			r.panic(err)
@@ -664,35 +644,34 @@ func (r *Reader) Varuint64(x *uint64) {
 			*x = v
 			return
 		}
+		i += 7
 	}
-	r.panic(errVarIntOverflow)
 }
 
-// Varint32 reads up to 5 bytes from the underlying buffer into an int32.
-func (r *Reader) Varint32(x *int32) {
-	var ux uint32
-	for i := 0; i < 35; i += 7 {
+// Varuint64 reads up to 10 bytes from the underlying buffer into a uint64.
+func (r *Reader) Varuint64(x *uint64) {
+	var v uint64
+	var i int
+	for {
 		b, err := r.r.ReadByte()
 		if err != nil {
 			r.panic(err)
 		}
 
-		ux |= uint32(b&0x7f) << i
+		v |= uint64(b&0x7f) << i
 		if b&0x80 == 0 {
-			*x = int32(ux >> 1)
-			if ux&1 != 0 {
-				*x = ^*x
-			}
+			*x = v
 			return
 		}
+		i += 7
 	}
-	r.panic(errVarIntOverflow)
 }
 
-// Varuint32 reads up to 5 bytes from the underlying buffer into a uint32.
-func (r *Reader) Varuint32(x *uint32) {
-	var v uint32
-	for i := 0; i < 35; i += 7 {
+// Varint32 reads up to 5 bytes from the underlying buffer into an int32.
+func (r *Reader) Varint32(x *int32) {
+	var v int32
+	var i int
+	for {
 		b, err := r.r.ReadByte()
 		if err != nil {
 			r.panic(err)
@@ -703,8 +682,27 @@ func (r *Reader) Varuint32(x *uint32) {
 			*x = v
 			return
 		}
+		i += 7
 	}
-	r.panic(errVarIntOverflow)
+}
+
+// Varuint32 reads up to 5 bytes from the underlying buffer into a uint32.
+func (r *Reader) Varuint32(x *uint32) {
+	var v uint32
+	var i int
+	for {
+		b, err := r.r.ReadByte()
+		if err != nil {
+			r.panic(err)
+		}
+
+		v |= uint32(b&0x7f) << i
+		if b&0x80 == 0 {
+			*x = v
+			return
+		}
+		i += 7
+	}
 }
 
 // panicf panics with the format and values passed and assigns the error created to the Reader.

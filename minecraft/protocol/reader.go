@@ -639,7 +639,7 @@ func (r *Reader) Varint64(x *int64) {
 			r.panic(err)
 		}
 
-		v |= uint64(b&0x7f) << i
+		v |= int64(b&0x7f) << i
 		if b&0x80 == 0 {
 			*x = v
 			return
@@ -677,7 +677,7 @@ func (r *Reader) Varint32(x *int32) {
 			r.panic(err)
 		}
 
-		v |= uint32(b&0x7f) << i
+		v |= int32(b&0x7f) << i
 		if b&0x80 == 0 {
 			*x = v
 			return

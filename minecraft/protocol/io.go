@@ -57,6 +57,7 @@ type IO interface {
 	GameRule(x *GameRule)
 	AbilityValue(x *any)
 	CompressedBiomeDefinitions(x *map[string]any)
+	Marshal(Marshaler)
 
 	ShieldID() int32
 	UnknownEnumOption(value any, enum string)
@@ -151,7 +152,7 @@ func SliceOfLen[T any, S ~*[]T, A PtrMarshaler[T]](r IO, l uint32, x S) {
 	}
 
 	for i := uint32(0); i < l; i++ {
-		A(&(*x)[i]).Marshal(r)
+		r.Marshal(A(&(*x)[i]))
 	}
 }
 
@@ -185,7 +186,7 @@ type PtrMarshaler[T any] interface {
 
 // Single reads/writes a single Marshaler x.
 func Single[T any, S PtrMarshaler[T]](r IO, x S) {
-	x.Marshal(r)
+	r.Marshal(x)
 }
 
 // Optional is an optional type in the protocol. If not set, only a false bool is written. If set, a true bool is
@@ -227,6 +228,6 @@ func OptionalFuncIO[T any](r IO, x *Optional[T], f func(IO, *T)) any {
 func OptionalMarshaler[T any, A PtrMarshaler[T]](r IO, x *Optional[T]) {
 	r.Bool(&x.set)
 	if x.set {
-		A(&x.val).Marshal(r)
+		r.Marshal(A(&x.val))
 	}
 }

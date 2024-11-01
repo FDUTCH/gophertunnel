@@ -33,6 +33,10 @@ func NewReader(r interface {
 	return &Reader{r: r, shieldID: shieldID, limitsEnabled: enableLimits}
 }
 
+func (r *Reader) Marshal(marshaler Marshaler) {
+	marshaler.Marshal(r)
+}
+
 // Uint8 reads a uint8 from the underlying buffer.
 func (r *Reader) Uint8(x *uint8) {
 	var err error

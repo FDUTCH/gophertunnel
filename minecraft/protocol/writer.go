@@ -41,6 +41,10 @@ func (w *Writer) Reader() bool {
 	return false
 }
 
+func (w *Writer) LimitsEnabled() bool {
+	return false
+}
+
 // Uint8 writes a uint8 to the underlying buffer.
 func (w *Writer) Uint8(x *uint8) {
 	_ = w.w.WriteByte(*x)

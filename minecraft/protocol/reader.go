@@ -41,6 +41,10 @@ func (r *Reader) Reader() bool {
 	return true
 }
 
+func (r *Reader) LimitsEnabled() bool {
+	return r.limitsEnabled
+}
+
 // Uint8 reads a uint8 from the underlying buffer.
 func (r *Reader) Uint8(x *uint8) {
 	var err error

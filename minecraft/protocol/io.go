@@ -58,6 +58,7 @@ type IO interface {
 	AbilityValue(x *any)
 	CompressedBiomeDefinitions(x *map[string]any)
 	Marshal(Marshaler)
+	Reader() bool
 
 	ShieldID() int32
 	UnknownEnumOption(value any, enum string)

@@ -37,6 +37,10 @@ func (w *Writer) Marshal(marshaler Marshaler) {
 	marshaler.Marshal(w)
 }
 
+func (w *Writer) Reader() bool {
+	return false
+}
+
 // Uint8 writes a uint8 to the underlying buffer.
 func (w *Writer) Uint8(x *uint8) {
 	_ = w.w.WriteByte(*x)

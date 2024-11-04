@@ -37,6 +37,10 @@ func (r *Reader) Marshal(marshaler Marshaler) {
 	marshaler.Marshal(r)
 }
 
+func (r *Reader) Reader() bool {
+	return true
+}
+
 // Uint8 reads a uint8 from the underlying buffer.
 func (r *Reader) Uint8(x *uint8) {
 	var err error

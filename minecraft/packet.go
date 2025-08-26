@@ -15,19 +15,19 @@ type packetData struct {
 }
 
 // parseData parses the packet data slice passed into a packetData struct.
-func parseData(data []byte, conn *Conn) *packetData {
+func parseData(data []byte, conn *Conn) (*packetData, error) {
 	buf := bytes.NewBuffer(data)
 	header := &packet.Header{}
 	if err := header.Read(buf); err != nil {
 		// We don't return this as an error as it's not in the hand of the user to control this. Instead,
 		// we return to reading a new packet.
-		return nil
+		return nil, fmt.Errorf("read packet header: %w", err)
 	}
 	if conn.packetFunc != nil {
 		// The packet func was set, so we call it.
 		conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
 	}
-	return &packetData{h: header, full: data, payload: buf}
+	return &packetData{h: header, full: data, payload: buf}, nil
 }
 
 type unknownPacketError struct {

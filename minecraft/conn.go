@@ -581,9 +581,9 @@ func (conn *Conn) deferPacket(pk *packetData) {
 // receive receives an incoming serialised packet from the underlying connection. If the connection is not yet
 // logged in, the packet is immediately handled.
 func (conn *Conn) receive(data []byte) error {
-	pkData := parseData(data, conn)
-	if pkData == nil {
-		return nil
+	pkData, err := parseData(data, conn)
+	if err != nil {
+		return err
 	}
 	if pkData.h.PacketID == packet.IDDisconnect {
 		// We always handle disconnect packets and close the connection if one comes in.
